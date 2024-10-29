@@ -37,7 +37,9 @@ This system uses collaborative filtering, a technique that makes recommendations
 
 # 🔧 Usage
 
-	1.	Interactive Notebook:
-Explore the core logic behind the recommendation system by opening the book_recommended_system.ipynb notebook.
-	2.	Web Interface:
-Use the Flask web app to get personalized book recommendations (recommend.html). On the homepage (index.html), you can also view popular book recommendations.
+	1.	Web Interface:
+	•	Run the Flask app (app.py) and visit http://127.0.0.1:5000/ in your browser.
+	•	The homepage (index.html) shows popular books.
+	•	For personalized recommendations, go to /recommend and enter your user ID.
+	2.	Jupyter Notebook:
+	•	Open book_recommended_system.ipynb to explore the recommendation logic and test the model interactively.
