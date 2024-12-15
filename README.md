@@ -9,18 +9,18 @@ Welcome to the Book Recommendation System repository! This project uses a collab
 	•	Interactive Web Interface: A user-friendly interface for getting book recommendations.
 
 # 📂 Repository Structure
-📦book_recommended_system
- ┣ 📂templates
- ┃ ┣ 📜index.html          # Home page showing popular book recommendations
- ┃ ┗ 📜recommend.html      # Page displaying personalized book recommendations
- ┣ 📜README.md             # Project documentation
- ┣ 📜app.py                # Flask web application for the recommendation system
- ┣ 📜book_recommended_system.ipynb  # Jupyter notebook for developing and testing the model
- ┣ 📜books.pkl             # Preprocessed book data
- ┣ 📜popular.pkl           # Preprocessed data for popular book recommendations
- ┣ 📜pt.pkl                # Pivot table of user-book interactions
- ┣ 📜similarity_scores.pkl  # Precomputed similarity scores matrix
- ┗ 📜requirements.txt      # Python dependencies and libraries
+	📦book_recommended_system
+	 ┣ 📂templates
+	 ┃ ┣ 📜index.html          # Home page showing popular book recommendations
+	 ┃ ┗ 📜recommend.html      # Page displaying personalized book recommendations
+	 ┣ 📜README.md             # Project documentation
+	 ┣ 📜app.py                # Flask web application for the recommendation system
+	 ┣ 📜book_recommended_system.ipynb  # Jupyter notebook for developing and testing the model
+	 ┣ 📜books.pkl             # Preprocessed book data
+	 ┣ 📜popular.pkl           # Preprocessed data for popular book recommendations
+	 ┣ 📜pt.pkl                # Pivot table of user-book interactions
+	 ┣ 📜similarity_scores.pkl  # Precomputed similarity scores matrix
+	 ┗ 📜requirements.txt      # Python dependencies and libraries
  
 # 🧠 How It Works (Collaborative Filtering)
 
