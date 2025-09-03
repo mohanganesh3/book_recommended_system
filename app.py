@@ -30,12 +30,17 @@ def load_pickle_file(filename):
         return None
 
 # Load the precomputed models with error handling
-popular_df = load_pickle_file('popular.pkl') or pd.DataFrame()
-pt = load_pickle_file('pt.pkl') or pd.DataFrame()
+popular_df_data = load_pickle_file('popular.pkl')
+popular_df = popular_df_data if popular_df_data is not None else pd.DataFrame()
+
+pt_data = load_pickle_file('pt.pkl')
+pt = pt_data if pt_data is not None else pd.DataFrame()
 
 # Try to load books.pkl with protocol handling
-books = load_pickle_file('books.pkl')
-if books is None:
+books_data = load_pickle_file('books.pkl')
+if books_data is not None:
+    books = books_data
+else:
     # Create a minimal books dataframe from pt index if possible
     if isinstance(pt, pd.DataFrame) and len(pt.index) > 0:
         books = pd.DataFrame({'Book-Title': pt.index})
@@ -46,8 +51,10 @@ if books is None:
         books = pd.DataFrame()
         print("Failed to create books dataframe")
 
-similarity_scores = load_pickle_file('similarity_scores.pkl')
-if similarity_scores is None:
+similarity_scores_data = load_pickle_file('similarity_scores.pkl')
+if similarity_scores_data is not None:
+    similarity_scores = similarity_scores_data
+else:
     similarity_scores = np.array([])
     print("Failed to load similarity_scores, using empty array")
 
