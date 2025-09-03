@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Recommendation System - Recommend</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-book-reader me-2"></i>Book Recommender
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                    <a class="nav-link active" href="/recommend">
+                        <i class="fas fa-robot me-1"></i>Recommend
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold">Personalized Book Recommendations</h1>
+                    <p class="lead">Enter a book you love and discover similar titles you'll enjoy</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% if error %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5>Book Not Found</h5>
+                            <p class="mb-2">{{ error }}</p>
+                            {% if "Did you mean:" in error %}
+                                {% set error_parts = error.split("Did you mean: ") %}
+                                {% if error_parts|length > 1 %}
+                                    {% set suggestions_part = error_parts[1].split(" Or try: ") %}
+                                    {% set main_suggestion = suggestions_part[0] %}
+                                    <!-- Remove any trailing punctuation for the main suggestion -->
+                                    {% if main_suggestion[-1] == '?' or main_suggestion[-1] == '.' %}
+                                        {% set main_suggestion = main_suggestion[:-1] %}
+                                    {% endif %}
+                                    {% if main_suggestion[-1] == ',' %}
+                                        {% set main_suggestion = main_suggestion[:-1] %}
+                                    {% endif %}
+                                    <a href="#" class="btn btn-primary btn-sm suggest-book mb-2 me-2" data-book="{{ main_suggestion }}">
+                                        <i class="fas fa-lightbulb me-1"></i>Try "{{ main_suggestion }}"
+                                    </a>
+                                    {% if suggestions_part|length > 1 %}
+                                        {% set other_suggestions = suggestions_part[1].split(", ") %}
+                                        {% for suggestion in other_suggestions %}
+                                            <!-- Clean up suggestion text -->
+                                            {% set clean_suggestion = suggestion %}
+                                            {% if clean_suggestion[-1] == '?' or clean_suggestion[-1] == '.' %}
+                                                {% set clean_suggestion = clean_suggestion[:-1] %}
+                                            {% endif %}
+                                            <a href="#" class="btn btn-outline-primary btn-sm suggest-book mb-2 me-2" data-book="{{ clean_suggestion }}">
+                                                <i class="fas fa-lightbulb me-1"></i>{{ clean_suggestion }}
+                                            </a>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-search me-2"></i>Find Similar Books
+                        </h5>
+                        <form action="/recommend_books" method="post" class="mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="user_input" id="book-search" 
+                                       placeholder="Enter a book name (e.g., Harry Potter)..." 
+                                       value="{{ book_title or '' }}" required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-robot me-2"></i>Get Recommendations
+                                </button>
+                            </div>
+                        </form>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tip: Enter the full or partial name of a book you've enjoyed
+                            </small>
+                            <div>
+                                <span class="badge bg-secondary">Popular: Harry Potter, Lord of the Rings</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if data %}
+                <div class="mt-4">
+                    <h2 class="mb-4">
+                        <i class="fas fa-sparkles me-2"></i>Books Similar to "{{ book_title }}"
+                    </h2>
+                    <!-- Information alert for limited book data -->
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5>Data Limitation Notice</h5>
+                                <p class="mb-2">
+                                    {% if data_quality and data_quality.limited_info_percentage > 50 %}
+                                        Many of these recommendations have limited information due to data availability. 
+                                    {% elif data_quality and data_quality.limited_info_percentage > 0 %}
+                                        Some of these recommendations have limited information due to data availability.
+                                    {% else %}
+                                        All recommendations have complete information.
+                                    {% endif %}
+                                    We're working to expand our database to provide more detailed information for all books.
+                                </p>
+                                {% if data_quality %}
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                         style="width: {{ 100 - data_quality.limited_info_percentage }}%" 
+                                         aria-valuenow="{{ 100 - data_quality.limited_info_percentage }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {{ data_quality.total_recommendations - data_quality.limited_info_count }} of {{ data_quality.total_recommendations }} books have complete information
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div class="row">
+                        {% for book in data %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100">
+                                <img src="{{ book[2] }}" class="card-img-top" alt="{{ book[0] }}" style="height: 250px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/150';">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title book-title">{{ book[0] }}</h5>
+                                    <p class="card-text book-author">
+                                        {% if book[1] != 'Unknown' %}
+                                            by {{ book[1] }}
+                                        {% else %}
+                                            <span class="text-muted">Author information not available</span>
+                                        {% endif %}
+                                    </p>
+                                    <div class="mt-auto">
+                                        {% if book[3] > 0 %}
+                                        <div class="book-rating mb-2">
+                                            {% set avg_rating = book[3]|round(0, 'floor')|int %}
+                                            {% for _ in range(5) %}
+                                                {% if loop.index <= avg_rating %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-warning"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <span class="ms-1">{{ "%.2f"|format(book[3]) }}</span>
+                                        </div>
+                                        {% else %}
+                                        <div class="text-muted mb-2">
+                                            <i class="far fa-star me-1"></i>No ratings yet
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Book Recommendation System</h5>
+                    <p>Powered by machine learning to help you discover your next great read.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h5>Contact</h5>
+                    <p>support@bookrecommender.com</p>
+                </div>
+            </div>
+            <hr class="mt-0 mb-3 bg-light">
+            <div class="text-center">
+                <p>&copy; 2023 Book Recommendation System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle suggested book clicks
+        document.addEventListener('DOMContentLoaded', function() {
+            const suggestButtons = document.querySelectorAll('.suggest-book');
+            const searchInput = document.getElementById('book-search');
+            
+            suggestButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const bookName = this.getAttribute('data-book');
+                    // Clean the book name to remove any trailing punctuation
+                    const cleanBookName = bookName.replace(/[.?]+$/, '').trim();
+                    searchInput.value = cleanBookName;
+                    // Auto-submit the form
+                    searchInput.form.submit();
+                });
+            });
+        });
+        
+        // Add autocomplete functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('book-search');
+            const form = searchInput.closest('form');
+            const container = document.querySelector('.container');
+            
+            // Create a div to show suggestions
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'suggestions-dropdown';
+            
+            // Insert the suggestions div after the form, not inside it
+            form.parentNode.insertBefore(suggestionsDiv, form.nextSibling);
+            
+            let debounceTimer;
+            
+            searchInput.addEventListener('input', function() {
+                const value = this.value.trim();
+                
+                // Clear previous timer
+                clearTimeout(debounceTimer);
+                
+                if (value.length > 1) {
+                    // Debounce the API call
+                    debounceTimer = setTimeout(function() {
+                        fetch(`/autocomplete?q=${encodeURIComponent(value)}`)
+                            .then(response => response.json())
+                            .then(suggestions => {
+                                if (suggestions.length > 0) {
+                                    suggestionsDiv.innerHTML = '';
+                                    suggestions.forEach(book => {
+                                        const suggestionItem = document.createElement('div');
+                                        suggestionItem.className = 'suggestion-item';
+                                        
+                                        // Create the suggestion item elements properly
+                                        const flexContainer = document.createElement('div');
+                                        flexContainer.className = 'd-flex';
+                                        
+                                        const img = document.createElement('img');
+                                        img.src = book.image;
+                                        img.alt = book.title;
+                                        img.className = 'suggestion-image me-2';
+                                        img.onerror = function() {
+                                            this.src = 'https://via.placeholder.com/150';
+                                        };
+                                        
+                                        const contentDiv = document.createElement('div');
+                                        contentDiv.className = 'flex-grow-1';
+                                        
+                                        const titleDiv = document.createElement('div');
+                                        titleDiv.className = 'suggestion-title';
+                                        titleDiv.textContent = book.title;
+                                        
+                                        const authorDiv = document.createElement('div');
+                                        authorDiv.className = 'suggestion-author';
+                                        authorDiv.textContent = `by ${book.author}`;
+                                        
+                                        const ratingDiv = document.createElement('div');
+                                        ratingDiv.className = 'suggestion-rating';
+                                        
+                                        if (book.rating > 0) {
+                                            const starsSpan = document.createElement('span');
+                                            starsSpan.className = 'rating-stars';
+                                            
+                                            const fullStars = Math.min(5, Math.floor(book.rating));
+                                            const emptyStars = Math.max(0, 5 - Math.floor(book.rating));
+                                            
+                                            starsSpan.textContent = '★'.repeat(fullStars) + '☆'.repeat(emptyStars) + ' ' + book.rating;
+                                            ratingDiv.appendChild(starsSpan);
+                                        } else {
+                                            ratingDiv.textContent = 'No ratings yet';
+                                        }
+                                        
+                                        contentDiv.appendChild(titleDiv);
+                                        contentDiv.appendChild(authorDiv);
+                                        contentDiv.appendChild(ratingDiv);
+                                        
+                                        flexContainer.appendChild(img);
+                                        flexContainer.appendChild(contentDiv);
+                                        
+                                        suggestionItem.appendChild(flexContainer);
+                                        
+                                        // Add click event for the main suggestion item (fills the input and submits)
+                                        suggestionItem.addEventListener('click', function(e) {
+                                            searchInput.value = book.title;
+                                            suggestionsDiv.style.display = 'none';
+                                            // Submit the form
+                                            form.submit();
+                                        });
+                                        
+                                        // Add keyboard navigation
+                                        suggestionItem.addEventListener('keydown', function(e) {
+                                            if (e.key === 'Enter') {
+                                                searchInput.value = book.title;
+                                                suggestionsDiv.style.display = 'none';
+                                                form.submit();
+                                            }
+                                        });
+
+                                        suggestionsDiv.appendChild(suggestionItem);
+                                    });
+                                    suggestionsDiv.style.display = 'block';
+                                    
+                                    // Position the dropdown below the input
+                                    const rect = searchInput.getBoundingClientRect();
+                                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                                    suggestionsDiv.style.position = 'absolute';
+                                    suggestionsDiv.style.top = (rect.bottom + scrollTop) + 'px';
+                                    suggestionsDiv.style.left = rect.left + 'px';
+                                    suggestionsDiv.style.width = rect.width + 'px';
+                                } else {
+                                    suggestionsDiv.style.display = 'none';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching suggestions:', error);
+                                suggestionsDiv.style.display = 'none';
+                            });
+                    }, 300); // 300ms debounce
+                } else {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!form.contains(e.target) && e.target !== searchInput && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+            
+            // Hide suggestions on escape key
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    suggestionsDiv.style.display = 'none';
+                }
+                // Add arrow key navigation
+                if (e.key === 'ArrowDown' && suggestionsDiv.style.display === 'block') {
+                    const firstItem = suggestionsDiv.querySelector('.suggestion-item');
+                    if (firstItem) {
+                        firstItem.focus();
+                    }
+                }
+            });
+            
+            // Adjust dropdown position on window resize
+            window.addEventListener('resize', function() {
+                if (suggestionsDiv.style.display === 'block') {
+                    const rect = searchInput.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    suggestionsDiv.style.top = (rect.bottom + scrollTop) + 'px';
+                    suggestionsDiv.style.left = rect.left + 'px';
+                    suggestionsDiv.style.width = rect.width + 'px';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
