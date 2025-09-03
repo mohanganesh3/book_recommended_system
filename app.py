@@ -13,30 +13,31 @@ warnings.filterwarnings('ignore')
 app = flask.Flask(__name__)
 app.secret_key = 'book_recommendation_secret_key_2023'
 
-# Load the precomputed models with error handling
-try:
-    popular_df = pickle.load(open('popular.pkl', 'rb'))
-    print("Loaded popular.pkl successfully")
-except Exception as e:
-    print(f"Error loading popular.pkl: {e}")
-    popular_df = pd.DataFrame()
+# Function to safely load pickle files with error handling
+def load_pickle_file(filename):
+    """Safely load a pickle file with comprehensive error handling"""
+    try:
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                data = pickle.load(f)
+            print(f"Loaded {filename} successfully")
+            return data
+        else:
+            print(f"File {filename} not found")
+            return None
+    except Exception as e:
+        print(f"Error loading {filename}: {e}")
+        return None
 
-try:
-    pt = pickle.load(open('pt.pkl', 'rb'))
-    print("Loaded pt.pkl successfully")
-except Exception as e:
-    print(f"Error loading pt.pkl: {e}")
-    pt = pd.DataFrame()
+# Load the precomputed models with error handling
+popular_df = load_pickle_file('popular.pkl') or pd.DataFrame()
+pt = load_pickle_file('pt.pkl') or pd.DataFrame()
 
 # Try to load books.pkl with protocol handling
-try:
-    with open('books.pkl', 'rb') as f:
-        books = pickle.load(f)
-    print("Loaded books.pkl successfully")
-except Exception as e:
-    print(f"Error loading books.pkl: {e}")
+books = load_pickle_file('books.pkl')
+if books is None:
     # Create a minimal books dataframe from pt index if possible
-    if isinstance(pt, pd.DataFrame):
+    if isinstance(pt, pd.DataFrame) and len(pt.index) > 0:
         books = pd.DataFrame({'Book-Title': pt.index})
         books['Book-Author'] = 'Unknown'
         books['Image-URL-M'] = 'https://via.placeholder.com/150'
@@ -45,11 +46,16 @@ except Exception as e:
         books = pd.DataFrame()
         print("Failed to create books dataframe")
 
+similarity_scores = load_pickle_file('similarity_scores.pkl')
+if similarity_scores is None:
+    similarity_scores = np.array([])
+    print("Failed to load similarity_scores, using empty array")
+
 # Create a comprehensive book lookup dictionary for faster access
 book_lookup = {}
 
 # First, add all books from pt.index with default values
-if isinstance(pt, pd.DataFrame):
+if isinstance(pt, pd.DataFrame) and len(pt.index) > 0:
     for title in pt.index:
         book_lookup[title] = {
             'author': 'Unknown',
@@ -90,13 +96,6 @@ if not books.empty:
                 book_lookup[title]['image'] = row['Image-URL-M']
 
 print(f"Created book lookup with {len(book_lookup)} books")
-
-try:
-    similarity_scores = pickle.load(open('similarity_scores.pkl', 'rb'))
-    print("Loaded similarity_scores.pkl successfully")
-except Exception as e:
-    print(f"Error loading similarity_scores.pkl: {e}")
-    similarity_scores = np.array([])
 
 # Initialize user ratings storage
 user_ratings_file = 'user_ratings.json'
