@@ -1,4 +1,4 @@
-# Updated for Vercel deployment compatibility
+# Updated for Vercel deployment compatibility with Python 3.9
 flask==2.3.2
 numpy==1.24.3
 pandas==1.5.3

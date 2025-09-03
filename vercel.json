@@ -5,7 +5,13 @@
       "src": "app.py",
       "use": "@vercel/python",
       "config": {
-        "runtime": "python3.9"
+        "runtime": "python3.9",
+        "includeFiles": [
+          "popular.pkl",
+          "pt.pkl",
+          "books.pkl",
+          "similarity_scores.pkl"
+        ]
       }
     }
   ],
