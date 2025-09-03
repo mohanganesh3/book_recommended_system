@@ -31,10 +31,17 @@ def load_pickle_file(filename):
 
 # Load the precomputed models with error handling
 popular_df_data = load_pickle_file('popular.pkl')
-popular_df = popular_df_data if popular_df_data is not None else pd.DataFrame()
+# Fix the DataFrame assignment to avoid ambiguous truth value error
+if popular_df_data is not None:
+    popular_df = popular_df_data
+else:
+    popular_df = pd.DataFrame()
 
 pt_data = load_pickle_file('pt.pkl')
-pt = pt_data if pt_data is not None else pd.DataFrame()
+if pt_data is not None:
+    pt = pt_data
+else:
+    pt = pd.DataFrame()
 
 # Try to load books.pkl with protocol handling
 books_data = load_pickle_file('books.pkl')
@@ -71,7 +78,8 @@ if isinstance(pt, pd.DataFrame) and len(pt.index) > 0:
         }
 
 # Then, enrich with information from popular_df where available
-if not popular_df.empty:
+# Check if popular_df is a DataFrame and not empty
+if isinstance(popular_df, pd.DataFrame) and not popular_df.empty:
     for _, row in popular_df.iterrows():
         title = row['Book-Title']
         # Update the book info if it exists in our lookup
@@ -90,7 +98,8 @@ if not popular_df.empty:
             }
 
 # Finally, try to enrich with information from books dataframe where available
-if not books.empty:
+# Check if books is a DataFrame and not empty
+if isinstance(books, pd.DataFrame) and not books.empty:
     for _, row in books.iterrows():
         title = row['Book-Title']
         # Only update if the book exists in our lookup and has unknown values
@@ -194,7 +203,7 @@ def index():
     search_query = flask.request.args.get('search', '').strip().lower()
     
     # Filter popular books based on search query
-    if search_query and not popular_df.empty:
+    if search_query and isinstance(popular_df, pd.DataFrame) and not popular_df.empty:
         filtered_df = popular_df[
             popular_df['Book-Title'].str.lower().str.contains(search_query) |
             popular_df['Book-Author'].str.lower().str.contains(search_query)
@@ -202,7 +211,7 @@ def index():
     else:
         filtered_df = popular_df
     
-    if not filtered_df.empty:
+    if isinstance(filtered_df, pd.DataFrame) and not filtered_df.empty:
         return flask.render_template('index.html',
                                book_name=list(filtered_df['Book-Title'].values),
                                book_author=list(filtered_df['Book-Author'].values),
@@ -357,7 +366,7 @@ def book_details(book_title):
     
     # Get book details
     book_info = {}
-    if not books.empty:
+    if isinstance(books, pd.DataFrame) and not books.empty:
         temp_df = books[books['Book-Title'] == book_title]
         if not temp_df.empty:
             book_info = temp_df.iloc[0].to_dict()
