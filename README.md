@@ -357,7 +357,7 @@ In our information-rich world, discovery is the new challenge. This recommendati
 
 - **🌐 Live Demo**: [book-recommended-system-xud7.onrender.com](https://book-recommended-system-xud7.onrender.com/)
 - **📧 GitHub**: [@mohanganesh3](https://github.com/mohanganesh3)
-- **💼 LinkedIn**: [Connect with me]((https://www.linkedin.com/in/mohan-ganesh-gottipati-22279b310/))
+- **💼 LinkedIn**: [Connect with me](https://www.linkedin.com/in/mohan-ganesh-gottipati-22279b310/)
 
 ---
 
